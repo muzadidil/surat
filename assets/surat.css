@@ -1,0 +1,108 @@
+/* ============================================================
+   LEMBAR SURAT — ukuran A4 sungguhan, huruf Times New Roman,
+   kop bergaris ganda seperti naskah dinas resmi.
+   Berkas ini yang menentukan hasil cetak; jangan dicampur
+   dengan gaya antarmuka aplikasi.
+   ============================================================ */
+
+.kertas{
+  width:21cm;
+  min-height:29.7cm;
+  padding:1.5cm 2cm 2cm 2.5cm;
+  margin:0 auto;
+  background:#fff;
+  color:#000;
+  font-family:'Times New Roman', Times, serif;
+  font-size:12pt;
+  line-height:1.5;
+  box-sizing:border-box;
+}
+
+/* ---------- kop surat ---------- */
+.kop{ display:flex; align-items:center; gap:.6cm; }
+.kop-logo{ width:2.3cm; height:2.3cm; object-fit:contain; flex:none; }
+.kop-logo.kosong{
+  border:1px dashed #bbb; border-radius:4px;
+  display:grid; place-items:center;
+  font-family:system-ui,sans-serif; font-size:7pt; color:#999; text-align:center;
+}
+.kop-teks{ flex:1; text-align:center; line-height:1.25; }
+.kop-teks .k1{ font-size:14pt; }
+.kop-teks .k2{ font-size:15pt; font-weight:bold; }
+.kop-teks .k3{ font-size:17pt; font-weight:bold; letter-spacing:.02em; }
+.kop-teks .k4{ font-size:10pt; margin-top:.08cm; }
+
+/* Garis ganda khas kop dinas: tebal di atas, tipis di bawah. */
+.kop-garis{
+  border-top:3px solid #000;
+  border-bottom:1px solid #000;
+  height:3px;
+  margin:.15cm 0 .55cm;
+}
+
+/* ---------- judul & nomor ---------- */
+.surat-judul{
+  text-align:center;
+  font-size:13pt; font-weight:bold;
+  text-decoration:underline;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+  margin-bottom:.1cm;
+}
+.surat-nomor{ text-align:center; font-size:12pt; margin-bottom:.7cm; }
+
+/* ---------- badan surat ---------- */
+.surat-alinea{ text-align:justify; margin-bottom:.35cm; }
+
+.surat-data{
+  border-collapse:collapse;
+  margin:.25cm 0 .45cm 1.2cm;
+  font-size:12pt;
+}
+.surat-data td{ vertical-align:top; padding:.06cm 0; }
+.surat-data .label{ width:5.4cm; }
+.surat-data .pisah{ width:.5cm; }
+.surat-data .isi{ font-weight:bold; }
+
+/* ---------- tanda tangan ---------- */
+.ttd{ margin-top:.9cm; display:flex; justify-content:flex-end; }
+.ttd-blok{ width:8cm; text-align:center; }
+.ttd-ruang{ height:2.4cm; }
+.ttd-nama{ font-weight:bold; text-decoration:underline; }
+.ttd-jabatan{ margin-bottom:0; }
+
+/* ============================================================
+   ATURAN CETAK
+   Hanya lembar surat yang ikut tercetak. Semua antarmuka
+   aplikasi disembunyikan.
+   ============================================================ */
+
+@page{ size:A4; margin:0; }
+
+@media print{
+  html, body{
+    margin:0 !important; padding:0 !important;
+    background:#fff !important;
+  }
+
+  /* Sembunyikan seluruh antarmuka tanpa mengeluarkan #cetak dari
+     susunan halaman — memakai visibility, bukan display, supaya
+     lembar surat boleh berada di dalam kolom pratinjau. */
+  body *{ visibility:hidden !important; }
+  #cetak, #cetak *{ visibility:visible !important; }
+
+  #cetak{
+    position:absolute !important; left:0 !important; top:0 !important;
+    width:100% !important; max-height:none !important;
+    margin:0 !important; padding:0 !important;
+    overflow:visible !important;
+    background:#fff !important;
+  }
+  #cetak .kertas{
+    width:auto !important; min-height:auto !important;
+    transform:none !important;
+    margin:0 !important;
+    box-shadow:none !important;
+  }
+  .kop-logo.kosong{ border:0; }
+}

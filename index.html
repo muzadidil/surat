@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#16233A">
+<title>Surat Desa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=1">
+<link rel="stylesheet" href="assets/surat.css?v=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="mode-buat">
+
+<div id="app" class="app" hidden>
+  <header class="topbar">
+    <div>
+      <p class="topbar-kop">Pemerintah Desa</p>
+      <h1 class="topbar-title">Surat Desa</h1>
+    </div>
+  </header>
+
+  <nav class="tabbar">
+    <button class="tab aktif" data-tab="buat">Buat Surat</button>
+    <button class="tab" data-tab="data">Data Penduduk</button>
+    <button class="tab" data-tab="atur">Pengaturan</button>
+    <button class="tab" data-tab="arsip">Arsip</button>
+  </nav>
+
+  <div class="isi">
+    <main id="view" class="view"></main>
+    <!-- Lembar surat. Hanya bagian ini yang ikut tercetak — lihat surat.css. -->
+    <div id="cetak"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<div id="boot" class="boot"><span class="boot-mark"></span></div>
+
+<script type="module" src="js/app.js?v=1"></script>
+</body>
+</html>
