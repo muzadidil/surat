@@ -84,6 +84,9 @@ export async function seKeluarga(nkk) {
 export const jumlahPenduduk = () =>
   tx('penduduk', 'readonly', s => s.count());
 
+export const semuaPenduduk = () =>
+  tx('penduduk', 'readonly', s => s.getAll());
+
 export const kosongkanPenduduk = () =>
   tx('penduduk', 'readwrite', s => s.clear());
 
@@ -251,6 +254,66 @@ export function bacaExcel(berkas) {
     };
     pembaca.readAsArrayBuffer(berkas);
   });
+}
+
+/* ============================================================
+   CADANGAN
+   Satu berkas JSON berisi seluruh isi aplikasi: penduduk,
+   pengaturan desa, dan arsip surat. Dipakai untuk pindah
+   komputer, dan untuk berjaga kalau data browser terhapus.
+   ============================================================ */
+
+export async function exportSemua() {
+  const [penduduk, pengaturan, arsip] = await Promise.all([
+    semuaPenduduk(),
+    tx('pengaturan', 'readonly', s => s.getAll()),
+    tx('arsip', 'readonly', s => s.getAll())
+  ]);
+  return {
+    aplikasi: 'surat-desa',
+    versi: 1,
+    dibuat: new Date().toISOString(),
+    penduduk: penduduk || [],
+    pengaturan: pengaturan || [],
+    arsip: arsip || []
+  };
+}
+
+/** Pulihkan dari berkas cadangan. Seluruh isi lama diganti. */
+export async function imporSemua(isi) {
+  if (!isi || isi.aplikasi !== 'surat-desa') {
+    throw new Error('Berkas ini bukan cadangan Surat Desa.');
+  }
+  if (isi.versi > 1) {
+    throw new Error('Cadangan dibuat aplikasi versi lebih baru. Perbarui dulu aplikasinya.');
+  }
+
+  const db = await buka();
+  await new Promise((selesai, gagal) => {
+    const t = db.transaction(['penduduk', 'pengaturan', 'arsip'], 'readwrite');
+    t.objectStore('penduduk').clear();
+    t.objectStore('pengaturan').clear();
+    t.objectStore('arsip').clear();
+    t.oncomplete = selesai;
+    t.onerror = () => gagal(t.error);
+  });
+
+  if (isi.penduduk?.length) await simpanPenduduk(isi.penduduk);
+
+  await new Promise((selesai, gagal) => {
+    const t = db.transaction(['pengaturan', 'arsip'], 'readwrite');
+    (isi.pengaturan || []).forEach(p => t.objectStore('pengaturan').put(p));
+    // id lama dibuang supaya autoIncrement tidak bentrok
+    (isi.arsip || []).forEach(({ id, ...sisa }) => t.objectStore('arsip').add(sisa));
+    t.oncomplete = selesai;
+    t.onerror = () => gagal(t.error);
+  });
+
+  return {
+    penduduk: isi.penduduk?.length || 0,
+    arsip: isi.arsip?.length || 0,
+    dibuat: isi.dibuat
+  };
 }
 
 /** Tulis hasil impor ke IndexedDB. Data lama ditimpa berdasarkan NIK. */

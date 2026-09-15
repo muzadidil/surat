@@ -1,8 +1,10 @@
-import * as D from './data.js?v=1';
+import * as D from './data.js?v=2';
+import * as Drive from './drive.js?v=2';
+import { DESA_DEMO, WARGA_DEMO } from './demo.js?v=2';
 import {
   TEMPLATE, cariTemplate, barisData, pembukaSurat, penutupSurat,
   tglPanjang, hariIni, judulKata
-} from './templates.js?v=1';
+} from './templates.js?v=2';
 
 const $  = (s, i = document) => i.querySelector(s);
 const $$ = (s, i = document) => [...i.querySelectorAll(s)];
@@ -24,6 +26,10 @@ function toast(pesan, gagal = false) {
    KEADAAN APLIKASI
    ============================================================ */
 
+/** Lambang Kabupaten Jember ikut dalam repo, jadi kop surat sudah benar
+ *  sejak pertama dibuka. Desa di luar Jember tinggal unggah lambangnya. */
+const LOGO_BAWAAN = 'assets/logo-jember.png';
+
 const BAWAAN_DESA = {
   kabupaten: 'JEMBER',
   kecamatan: 'BANGSALSARI',
@@ -40,6 +46,7 @@ let warga = null;                    // warga yang sedang dipilih
 let templateAktif = TEMPLATE[0];
 let isian = {};                      // nilai field tambahan
 let nomorManual = null;              // kalau operator menimpa nomor otomatis
+let modeDemo = false;                // data contoh → surat diberi tanda air
 
 /* ============================================================
    MULAI
@@ -48,6 +55,7 @@ let nomorManual = null;              // kalau operator menimpa nomor otomatis
 (async () => {
   const p = await D.ambilPengaturan();
   desa = { ...BAWAAN_DESA, ...p };
+  modeDemo = p.mode_demo === true;
   $('#boot').hidden = true;
   $('#app').hidden = false;
   gantiTab('buat');
@@ -59,10 +67,31 @@ function gantiTab(nama) {
   $$('.tab').forEach(t => t.classList.toggle('aktif', t.dataset.tab === nama));
   document.body.classList.toggle('mode-buat', nama === 'buat');
   const w = $('#view');
-  if (nama === 'buat')      vBuat(w);
-  else if (nama === 'data') vData(w);
-  else if (nama === 'atur') vAtur(w);
-  else                      vArsip(w);
+  if (nama === 'buat')          vBuat(w);
+  else if (nama === 'data')     vData(w);
+  else if (nama === 'cadangan') vCadangan(w);
+  else if (nama === 'atur')     vAtur(w);
+  else                          vArsip(w);
+}
+
+/** Muat 5 warga karangan + identitas desa contoh, untuk demo. */
+async function muatDemo() {
+  await D.kosongkanPenduduk();
+  await D.simpanPenduduk(WARGA_DEMO);
+  for (const [k, v] of Object.entries(DESA_DEMO)) await D.simpanPengaturan(k, v);
+  await D.simpanPengaturan('mode_demo', true);
+  desa = { ...BAWAAN_DESA, ...DESA_DEMO };
+  modeDemo = true;
+  warga = null;
+  toast('Data contoh dimuat. Surat akan bertanda air CONTOH.');
+  gantiTab('buat');
+}
+
+/** Dipanggil begitu data sungguhan masuk — tanda air harus hilang. */
+async function matikanDemo() {
+  if (!modeDemo) return;
+  modeDemo = false;
+  await D.simpanPengaturan('mode_demo', false);
 }
 
 /* ============================================================
@@ -74,8 +103,14 @@ async function vBuat(w) {
 
   w.innerHTML = `
     ${jumlah === 0 ? `<div class="peringatan">
-      Data penduduk belum dimuat. Buka tab <strong>Data Penduduk</strong> untuk memuat berkas Excel,
-      atau isi data warga secara manual di bawah.</div>` : ''}
+      Belum ada data penduduk. Muat berkas Excel di tab <strong>Data Penduduk</strong>,
+      atau coba dulu dengan data contoh.
+      <button class="btn btn-garis" id="bDemo" style="margin-top:10px">Muat 5 data contoh</button>
+      </div>` : ''}
+
+    ${modeDemo ? `<div class="catatan">
+      <strong>Mode contoh.</strong> Data ini karangan dan suratnya bertanda air CONTOH.
+      Tanda air hilang sendiri begitu data desa yang sebenarnya dimuat.</div>` : ''}
 
     <label class="field"><span>Jenis surat</span>
       <select id="fJenis">
@@ -117,6 +152,8 @@ async function vBuat(w) {
       Tombol cetak membuka jendela cetak. Pilih printer untuk mencetak, atau
       pilih <strong>“Save as PDF”</strong> untuk menyimpan sebagai berkas PDF.
     </p>`;
+
+  if ($('#bDemo')) $('#bDemo').onclick = muatDemo;
 
   $('#fJenis').onchange = e => {
     templateAktif = cariTemplate(e.target.value);
@@ -287,11 +324,10 @@ function gambar() {
   const alinea = t.paragraf(w, isian, desa);
 
   c.innerHTML = `
-    <div class="kertas">
+    <div class="kertas${modeDemo ? ' contoh' : ''}">
       <header class="kop">
-        ${desa.logo
-          ? `<img class="kop-logo" src="${desa.logo}" alt="">`
-          : `<div class="kop-logo kosong">logo<br>kabupaten</div>`}
+        <img class="kop-logo" src="${desa.logo || LOGO_BAWAAN}" alt="">
+
         <div class="kop-teks">
           <div class="k1">PEMERINTAH KABUPATEN ${aman(desa.kabupaten)}</div>
           <div class="k2">KECAMATAN ${aman(desa.kecamatan)}</div>
@@ -404,6 +440,7 @@ async function vData(w) {
       await D.simpanPenduduk(data, (n, total) => {
         lap.innerHTML = `<p class="cari-kosong">Menyimpan ${n.toLocaleString('id-ID')} dari ${total.toLocaleString('id-ID')}…</p>`;
       });
+      await matikanDemo();
       tampilLaporan(lap, laporan);
       toast(`${laporan.masuk.toLocaleString('id-ID')} warga termuat.`);
     } catch (err) {
@@ -448,6 +485,130 @@ function tampilLaporan(wadah, l) {
 }
 
 /* ============================================================
+   TAB: CADANGAN
+   ============================================================ */
+
+async function vCadangan(w) {
+  const jumlah = await D.jumlahPenduduk();
+  const adaDrive = Drive.siapDipakai();
+
+  w.innerHTML = `
+    <div class="catatan">
+      Cadangan masuk ke <strong>Google Drive milik desa sendiri</strong> — akun yang login nanti.
+      Aplikasi ini hanya diberi izin membuka berkas yang dibuatnya sendiri, tidak bisa
+      melihat isi Drive yang lain.
+    </div>
+
+    <section class="kop-kartu">
+      <p class="kop-label">Isi yang akan dicadangkan</p>
+      <p class="kop-angka">${jumlah.toLocaleString('id-ID')}</p>
+      <p class="kop-sub">data penduduk, ditambah pengaturan desa dan arsip surat</p>
+    </section>
+
+    ${!adaDrive ? `<div class="peringatan">
+      Cadangan ke Google Drive belum aktif — Client ID Google belum diisi di
+      <strong>js/config.js</strong>. Caranya ditulis di dalam berkas itu.
+      Sementara ini pakai cadangan ke berkas di bawah.</div>` : ''}
+
+    <div class="bagian"><h2>Cadangkan ke Google Drive</h2></div>
+    <div class="tombol-baris">
+      <button class="btn btn-utama" id="bUnggah" ${adaDrive ? '' : 'disabled'}>Cadangkan sekarang</button>
+      <button class="btn btn-garis" id="bDaftar" ${adaDrive ? '' : 'disabled'}>Lihat cadangan</button>
+    </div>
+    <div id="hasilDrive"></div>
+
+    <div class="bagian"><h2>Cadangkan ke berkas</h2><span>tanpa internet</span></div>
+    <div class="tombol-baris">
+      <button class="btn btn-garis" id="bUnduh">Simpan ke komputer</button>
+      <label class="btn btn-garis" style="cursor:pointer">
+        Pulihkan dari berkas
+        <input type="file" id="fPulih" accept=".json" hidden>
+      </label>
+    </div>`;
+
+  $('#bUnduh').onclick = async () => {
+    const isi = await D.exportSemua();
+    const blob = new Blob([JSON.stringify(isi)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'),
+      { href: url, download: `cadangan-surat-desa-${hariIni()}.json` });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('Cadangan tersimpan di komputer.');
+  };
+
+  $('#fPulih').onchange = e => {
+    const berkas = e.target.files[0];
+    if (!berkas) return;
+    const r = new FileReader();
+    r.onload = async () => {
+      try {
+        await pulihkan(JSON.parse(r.result));
+      } catch (err) {
+        toast(err.message || 'Berkas cadangan tidak terbaca.', true);
+      }
+    };
+    r.readAsText(berkas);
+  };
+
+  if (!adaDrive) return;
+
+  $('#bUnggah').onclick = async () => {
+    const b = $('#bUnggah');
+    b.disabled = true; b.textContent = 'Mengunggah…';
+    try {
+      const isi = await D.exportSemua();
+      const hasil = await Drive.unggah(isi);
+      $('#hasilDrive').innerHTML = `<div class="catatan">Tersimpan di Google Drive sebagai
+        <strong>${aman(hasil.name)}</strong>.</div>`;
+      toast('Cadangan terkirim ke Google Drive.');
+    } catch (err) {
+      $('#hasilDrive').innerHTML = `<div class="peringatan">${aman(err.message)}</div>`;
+    }
+    b.disabled = false; b.textContent = 'Cadangkan sekarang';
+  };
+
+  $('#bDaftar').onclick = async () => {
+    const wadah = $('#hasilDrive');
+    wadah.innerHTML = `<p class="cari-kosong">Mengambil daftar…</p>`;
+    try {
+      const berkas = await Drive.daftar();
+      if (!berkas.length) {
+        wadah.innerHTML = `<p class="cari-kosong">Belum ada cadangan di Drive akun ini.</p>`;
+        return;
+      }
+      wadah.innerHTML = `<div class="daftar-cari">${berkas.map(f => `
+        <button class="baris-cari" data-drive="${aman(f.id)}">
+          <strong>${aman(f.name)}</strong>
+          <small>${new Date(f.modifiedTime).toLocaleString('id-ID')}</small>
+        </button>`).join('')}</div>
+        <p class="field-hint">Menekan salah satu akan mengganti seluruh data di komputer ini.</p>`;
+
+      $$('[data-drive]', wadah).forEach(b => b.onclick = async () => {
+        try {
+          toast('Mengunduh cadangan…');
+          await pulihkan(await Drive.unduh(b.dataset.drive));
+        } catch (err) {
+          toast(err.message || 'Gagal memulihkan.', true);
+        }
+      });
+    } catch (err) {
+      wadah.innerHTML = `<div class="peringatan">${aman(err.message)}</div>`;
+    }
+  };
+}
+
+async function pulihkan(isi) {
+  if (!confirm('Seluruh data di komputer ini akan diganti dengan isi cadangan. Lanjutkan?')) return;
+  const hasil = await D.imporSemua(isi);
+  const p = await D.ambilPengaturan();
+  desa = { ...BAWAAN_DESA, ...p };
+  modeDemo = p.mode_demo === true;
+  toast(`Dipulihkan: ${hasil.penduduk.toLocaleString('id-ID')} warga, ${hasil.arsip} arsip surat.`);
+  gantiTab('cadangan');
+}
+
+/* ============================================================
    TAB: PENGATURAN
    ============================================================ */
 
@@ -472,12 +633,15 @@ function vAtur(w) {
       Kode wilayah desa dipakai di nomor surat. Cocokkan dengan yang dipakai di surat desa selama ini.
     </p>
 
-    <div class="bagian"><h2>Logo kabupaten</h2></div>
+    <div class="bagian"><h2>Lambang di kop surat</h2></div>
     <div class="logo-baris">
-      ${desa.logo ? `<img class="logo-pratinjau" src="${desa.logo}" alt="">` : `<div class="logo-pratinjau kosong">belum ada</div>`}
+      <img class="logo-pratinjau" src="${desa.logo || LOGO_BAWAAN}" alt="">
       <div>
+        <p class="field-hint" style="margin:0 0 8px">
+          ${desa.logo ? 'Memakai lambang yang kamu unggah.' : 'Memakai Lambang Kabupaten Jember bawaan aplikasi.'}
+        </p>
         <input type="file" id="fLogo" accept="image/*">
-        ${desa.logo ? `<button class="btn btn-garis" id="bHapusLogo" style="margin-top:8px">Hapus logo</button>` : ''}
+        ${desa.logo ? `<button class="btn btn-garis" id="bHapusLogo" style="margin-top:8px">Kembalikan ke lambang bawaan</button>` : ''}
       </div>
     </div>
 

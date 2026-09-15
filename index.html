@@ -8,9 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css?v=1">
-<link rel="stylesheet" href="assets/surat.css?v=1">
+<link rel="stylesheet" href="assets/style.css?v=2">
+<link rel="stylesheet" href="assets/surat.css?v=2">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Hanya untuk tombol cadangan ke Google Drive. Kalau gagal dimuat,
+     aplikasi tetap jalan penuh; cadangan ke berkas tetap bisa dipakai. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="mode-buat">
 
@@ -25,6 +28,7 @@
   <nav class="tabbar">
     <button class="tab aktif" data-tab="buat">Buat Surat</button>
     <button class="tab" data-tab="data">Data Penduduk</button>
+    <button class="tab" data-tab="cadangan">Cadangan</button>
     <button class="tab" data-tab="atur">Pengaturan</button>
     <button class="tab" data-tab="arsip">Arsip</button>
   </nav>
@@ -40,6 +44,6 @@
 
 <div id="boot" class="boot"><span class="boot-mark"></span></div>
 
-<script type="module" src="js/app.js?v=1"></script>
+<script type="module" src="js/app.js?v=2"></script>
 </body>
 </html>

@@ -24,16 +24,47 @@ instalasi PHP/MySQL, dan operator yang melek IT.
 browser, ketik NIK, cetak. Tanpa instalasi, tanpa server, tanpa pelatihan
 panjang.
 
-## Rencana fitur
+## Status fitur
 
-- [ ] Profil desa: kop surat, logo, alamat, nama kepala desa & sekretaris (sekali isi)
-- [ ] Impor data penduduk dari Excel/CSV — **fitur kunci**, tanpa ini autofill tidak ada gunanya
-- [ ] Cari warga dengan NIK, data surat terisi otomatis
-- [ ] Nomor surat otomatis sesuai kode klasifikasi, berurutan per tahun
-- [ ] Template surat (lihat daftar di bawah)
-- [ ] Arsip surat yang pernah dicetak — bisa dicetak ulang tanpa mengetik lagi
-- [ ] Cetak / simpan PDF
-- [ ] Login per desa, data antardesa terisolasi penuh
+- [x] Profil desa: kop surat, lambang, alamat, nama kepala desa & sekretaris (sekali isi)
+- [x] Impor data penduduk dari Excel/CSV, dengan laporan hal yang perlu diperiksa manusia
+- [x] Cari warga dengan NIK atau nama, data surat terisi otomatis
+- [x] Nomor surat otomatis sesuai kode klasifikasi, berurutan per tahun
+- [x] Enam template surat (lihat daftar di bawah)
+- [x] Cetak A4 / simpan PDF lewat dialog cetak browser
+- [x] Arsip surat yang pernah dicetak
+- [x] Cadangan ke Google Drive milik desa, dan ke berkas
+- [x] Mode contoh untuk demo — 5 data karangan, surat bertanda air CONTOH
+- [ ] Login per desa, data antardesa terisolasi penuh (tahap Firestore)
+- [ ] Cetak ulang surat dari arsip
+
+## Cara mencoba
+
+Buka `index.html` lewat server statis apa pun (bukan `file://`, karena
+aplikasinya memakai modul JavaScript):
+
+```bash
+python -m http.server 8777
+```
+
+lalu buka `http://localhost:8777`. Tekan **Muat 5 data contoh** untuk
+mencoba tanpa menyiapkan apa pun.
+
+## Cadangan
+
+Data tersimpan di IndexedDB — di browser komputer itu saja. Karena itu
+cadangan bukan pelengkap, tapi keharusan: menghapus data browsing bisa
+menghapus seluruh data penduduk.
+
+Dua cara, keduanya menghasilkan berkas yang sama:
+
+1. **Google Drive** — masuk ke Drive milik desa yang login, bukan ke
+   penyedia aplikasi. Izin yang diminta hanya `drive.file`, artinya
+   aplikasi cuma bisa membuka berkas yang dibuatnya sendiri dan tidak
+   pernah melihat isi Drive yang lain. Perlu Client ID Google; caranya
+   ada di [js/config.js](js/config.js).
+2. **Berkas** — unduh ke komputer, bisa dipulihkan di komputer lain.
+   Tidak perlu internet.
 
 ## Daftar surat yang akan dibuat
 
@@ -86,6 +117,21 @@ Aturan yang wajib dipegang:
 2. **Data tiap desa wajib terisolasi** — aturan Firestore harus memastikan operator Desa A tidak bisa membaca satu baris pun data Desa B.
 3. **Berkas data penduduk tidak boleh masuk Git.** Sudah diblokir lewat `.gitignore`; data hanya masuk lewat fitur impor di aplikasi.
 
-## Status
+## Berkas
 
-Tahap perencanaan. Belum ada kode.
+```
+index.html              kerangka aplikasi
+CNAME                   surat.zasha.online
+assets/style.css        tampilan aplikasi
+assets/surat.css        tampilan lembar surat + aturan cetak
+assets/logo-jember.png  lambang bawaan kop surat
+js/config.js            Client ID Google untuk cadangan Drive
+js/data.js              penyimpanan lokal, impor Excel, cadangan
+js/templates.js         definisi template & kalimat baku surat
+js/drive.js             cadangan ke Google Drive
+js/demo.js              data contoh untuk demo
+js/app.js               antarmuka & perakitan surat
+```
+
+Saat Firestore dipasang nanti, hanya `js/data.js` yang perlu berubah —
+seluruh aplikasi mengakses data lewat berkas itu saja.
