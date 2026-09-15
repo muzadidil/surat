@@ -58,6 +58,16 @@ let modeDemo = false;                // data contoh → surat diberi tanda air
   modeDemo = p.mode_demo === true;
   $('#boot').hidden = true;
   $('#app').hidden = false;
+
+  // Pengunjung yang benar-benar baru langsung disuguhi data contoh, supaya
+  // tampilan pertamanya surat yang sudah jadi — bukan form kosong. Begitu
+  // ada pengaturan tersimpan, ini tidak pernah jalan lagi, jadi data yang
+  // sengaja dikosongkan operator tidak diisi ulang diam-diam.
+  if (!Object.keys(p).length && (await D.jumlahPenduduk()) === 0) {
+    await muatDemo({ diam: true });
+    return;
+  }
+
   gantiTab('buat');
 })();
 
@@ -75,15 +85,18 @@ function gantiTab(nama) {
 }
 
 /** Muat 5 warga karangan + identitas desa contoh, untuk demo. */
-async function muatDemo() {
+async function muatDemo({ diam = false } = {}) {
   await D.kosongkanPenduduk();
   await D.simpanPenduduk(WARGA_DEMO);
   for (const [k, v] of Object.entries(DESA_DEMO)) await D.simpanPengaturan(k, v);
   await D.simpanPengaturan('mode_demo', true);
   desa = { ...BAWAAN_DESA, ...DESA_DEMO };
   modeDemo = true;
-  warga = null;
-  toast('Data contoh dimuat. Surat akan bertanda air CONTOH.');
+  // Satu warga dan isiannya langsung terisi, supaya yang pertama terlihat
+  // adalah surat yang sudah jadi — bukan form kosong.
+  warga = WARGA_DEMO[0];
+  isian = { agama: 'Islam', pekerjaan: 'Petani', keperluan: 'melengkapi berkas administrasi' };
+  if (!diam) toast('Data contoh dimuat. Surat akan bertanda air CONTOH.');
   gantiTab('buat');
 }
 
@@ -153,7 +166,7 @@ async function vBuat(w) {
       pilih <strong>“Save as PDF”</strong> untuk menyimpan sebagai berkas PDF.
     </p>`;
 
-  if ($('#bDemo')) $('#bDemo').onclick = muatDemo;
+  if ($('#bDemo')) $('#bDemo').onclick = () => muatDemo();
 
   $('#fJenis').onchange = e => {
     templateAktif = cariTemplate(e.target.value);
