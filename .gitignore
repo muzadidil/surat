@@ -1,0 +1,23 @@
+# ============================================================
+#  DATA PENDUDUK — JANGAN PERNAH MASUK KE REPO.
+#  Berkas data warga (NIK, nama, alamat) adalah data pribadi
+#  yang dilindungi UU No. 27 Tahun 2022. Repo ini publik:
+#  sekali ter-push, data itu bisa diambil siapa pun dan tetap
+#  tersimpan di riwayat Git walau filenya dihapus kemudian.
+#  Data penduduk hanya boleh masuk ke Firestore lewat fitur
+#  impor di aplikasi, bukan lewat Git.
+# ============================================================
+*.xlsx
+*.xls
+*.csv
+*.ods
+*.dbf
+data/
+penduduk/
+*penduduk*
+*warga*
+
+# Berkas lokal
+.DS_Store
+node_modules/
+*.log
